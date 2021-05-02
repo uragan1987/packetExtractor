@@ -1,0 +1,24 @@
+# Client Date <2021>
+# PacketExtractor by uragan1987
+0007 0089 actor_action
+000A 0113 skill_use
+0005 0085 character_move
+0006 007E sync
+0005 009B actor_look_at
+0006 009F item_take
+0006 00A2 item_drop
+0008 00F3 storage_item_add
+0008 00F5 storage_item_remove
+000A 0116 skill_use_location
+0006 0094 actor_info_request
+0006 0193 actor_name_request
+000C 0819 buy_bulk_buyer
+0006 0817 buy_bulk_request
+0002 0815 buy_bulk_closeShop
+0059 0811 buy_bulk_openShop
+0012 0802 booking_register
+0013 0072 map_login
+001A 02C4 party_join_request_by_name
+001A 0202 friend_request
+0005 022D homunculus_command
+0024 023B storage_password

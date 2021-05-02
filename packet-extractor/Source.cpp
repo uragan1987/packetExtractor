@@ -12,7 +12,7 @@
 # pragma warning(disable : 4996)
 # endif
 
-#define RO_EXE_NAME "Ragexe.exe"
+#define RO_EXE_NAME "NovaRO.exe"
 #define MAX_PACKET 0x1000
 #define MAX_SHUFFLE_PACKET 29
 #define MAX_SYNC_EX_PACKET 84
@@ -50,10 +50,10 @@ int main(void) {
 		cin.ignore((numeric_limits<streamsize>::max)(), '\n');
 	}
 
-	if (!(process = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, FALSE, pid)))
+	//TODO: need to load some dll
+	printf("PID: %08X  %d\n" , pid, pid);
+	if (!(process = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, TRUE, pid)))
 		EXIT("OpenProcess failed.\n");
-
-
 
 	printf("Step 1 - Read process memory to vector\n");
 	if (!(session_base_addr = ReadSessionMemory(process, &vec)))
@@ -99,8 +99,7 @@ int main(void) {
 	printf("Address: %08X\n", session_base_addr + offset);
 
 	printf("Step 2c - Look for g_PacketLenMap reference and the pktLen function call following it\n");
-	if ((offset = ScanMem(&vec, "\xB9\xAB\xAB\xAB\x00\xE8\xAB\xAB\xAB\xAB\x8B\xAB\x04", offset, 0, 13, false)) == 0xFFFFFFFF)
-// TODO : for New client = offset === -1 "\xB9\xAB\xAB\xAB\x01\xE8\xAB\xAB\xAB\xAB\x8B\xAB\x04"	 [4144]	
+	if ((offset = ScanMem(&vec, "\xB9\xAB\xAB\xAB\xAB\x50\xE8", offset, 0, 7, false)) == 0xFFFFFFFF)
 		EXIT("g_PacketLenMap reference not found.\n");
 	printf("Address: %08X\n", session_base_addr + offset);
 
@@ -141,21 +140,21 @@ int main(void) {
 	printf("Address: %08X\n", session_base_addr + ret);
 
 	printf("Step 4d - Look for call pattern 1\n");
-	if ((pktcall1 = ScanMem(&vec, "\x6A\xAB\x6A\xAB\x6A\xAB\x68\xAB\xAB\x00\x00\x8B\xCE\xE8", offset2, ret, 14, false)) == 0xFFFFFFFF)
+	if ((pktcall1 = ScanMem(&vec, "\x6A\xAB\x6A\xAB\x6A\xAB\x68\xAB\xAB\x00\x00\x8B\xCB\xE8", offset2, ret, 14, false)) == 0xFFFFFFFF)
 		EXIT("call pattern 1 not found.\n");
 	pktcall1 += *(DWORD*)&ReadMemory(pktcall1 + 14) + 18;
 	printf("Pattern 1: %08X\n", session_base_addr + pktcall1);
 
 	printf("Step 4e - Look for call pattern 2\n");
-	if ((pktcall2 = ScanMem(&vec, "\xC7\x45\xAB\xAB\xAB\x00\x00\xC7\x45\xAB\xAB\xAB\xAB\xAB\xC7\x45\xAB\xAB\xAB\xAB\xAB\xC7\x45\xAB\xAB\x00\x00\x00\xE8", offset2, ret, 29, false)) == 0xFFFFFFFF)
+	if ((pktcall2 = ScanMem(&vec, "\xF3\x0F\x7E\x45\xF0\x50\xC7\x45\xAB\xAB\xAB\xAB\xAB\x66\x0F\xD6\x45\xE4\xC7\x45\xAB\xAB\xAB\xAB\xAB\xE8", offset2, ret, 26, false)) == 0xFFFFFFFF)
 		EXIT("call pattern 2 not found.\n");
-	pktcall2 += *(DWORD*)&ReadMemory(pktcall2 + 29) + 33;
+	pktcall2 += *(DWORD*)&ReadMemory(pktcall2 + 26) + 30;
 	printf("Pattern 2: %08X\n", session_base_addr + pktcall2);
 
 	printf("Step 5a - Get Client date\n");
 	if ((next = ScanMem(&vec, "mylog(\xAB\xAB\xAB \xAB\xAB \xAB\xAB\xAB\xAB).txt", 0, 0, 22, false)) == 0xFFFFFFFF) {
 		printf("Client date not found.\n");
-		ClientDate = 2016;
+		ClientDate = 2021;
 	} else {
 		sprintf(str, "%.4s%02d%02d", &ReadMemory(next + 13), MonthName2Num(&ReadMemory(next + 6)), atoi(&ReadMemory(next + 10)));
 		ClientDate = atoi(str);
@@ -219,7 +218,7 @@ int main(void) {
 	file.open("keys.txt");
 	sprintf(str, "# Client Date <%d>\n", ClientDate);
 	file << str;
-	sprintf(str, "# PacketExtractor by BryanWai\n");
+	sprintf(str, "# PacketExtractor by uragan1987\n");
 	file << str;
 	if ((offset = ScanMem(&vec, "\x8B\x0D\xAB\xAB\xAB\x00\x6A\x01\xE8", refOffset, 0, 9, false)) == 0xFFFFFFFF)
 // For New client offset === -1 \x8B\x0D\xAB\xAB\xAB\x01\x6A\x01\xE8 [4144]	
@@ -241,7 +240,7 @@ int main(void) {
 	file.open("recvpackets.txt");
 	sprintf(str, "# Client Date <%d>\n", ClientDate);
 	file << str;
-	sprintf(str, "# PacketExtractor by BryanWai\n");
+	sprintf(str, "# PacketExtractor by uragan1987\n");
 	file << str;
 	for (i = c = 0; i < MAX_PACKET; ++i) {
 		if (pktlen[i]) {
@@ -256,7 +255,7 @@ int main(void) {
 	file.open("sync.txt");
 	sprintf(str, "# Client Date <%d>\n", ClientDate);
 	file << str;
-	sprintf(str, "# PacketExtractor by BryanWai\n");
+	sprintf(str, "# PacketExtractor by uragan1987\n");
 	file << str;
 	for (i = MAX_SHUFFLE_PACKET; i < MAX_SHUFFLE_PACKET + MAX_SYNC_EX_PACKET; ++i) {
 		if (!shuffle_pkt[i + MAX_SYNC_EX_PACKET])
@@ -304,7 +303,7 @@ int main(void) {
 		file.open("shuffles.txt");
 		sprintf(str, "# Client Date <%d>\n", ClientDate);
 		file << str;
-		sprintf(str, "# PacketExtractor by BryanWai\n");
+		sprintf(str, "# PacketExtractor by uragan1987\n");
 		file << str;
 		for (i = 0; i < MAX_SHUFFLE_PACKET; ++i) {
 			if (!shuffle_pkt[i])
