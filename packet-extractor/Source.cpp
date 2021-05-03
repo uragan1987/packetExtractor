@@ -144,13 +144,15 @@ int main(void) {
 
 	printf("Step 4d - Look for call pattern 1\n");
 	if ((pktcall1 = ScanMem(&vec, "\x6A\xAB\x6A\xAB\x6A\xAB\x68\xAB\xAB\x00\x00\x8B\xCB\xE8", offset2, ret, 14, false)) == 0xFFFFFFFF)
-		EXIT("call pattern 1 not found.\n");
+		if ((pktcall1 = ScanMem(&vec, "\x6A\xAB\x6A\xAB\x6A\xAB\x68\xAB\xAB\x00\x00\x8B\xCE\xE8", offset2, ret, 14, false)) == 0xFFFFFFFF)
+			EXIT("call pattern 1 not found.\n");
 	pktcall1 += *(DWORD*)&ReadMemory(pktcall1 + 14) + 18;
 	printf("Pattern 1: %08X\n", session_base_addr + pktcall1);
 
 	printf("Step 4e - Look for call pattern 2\n");
 	if ((pktcall2 = ScanMem(&vec, "\xF3\x0F\x7E\x45\xF0\x50\xC7\x45\xAB\xAB\xAB\xAB\xAB\x66\x0F\xD6\x45\xE4\xC7\x45\xAB\xAB\xAB\xAB\xAB\xE8", offset2, ret, 26, false)) == 0xFFFFFFFF)
-		EXIT("call pattern 2 not found.\n");
+		if ((pktcall2 = ScanMem(&vec, "\xAB\xAB\x00\x00\xC7\x45\xAB\xAB\xAB\xAB\xAB\xC7\x45\xAB\xAB\xAB\xAB\xAB\xC7\x45\xAB\xAB\x00\x00\x00\xE8", offset2, ret, 26, false)) == 0xFFFFFFFF)
+			EXIT("call pattern 2 not found.\n");
 	pktcall2 += *(DWORD*)&ReadMemory(pktcall2 + 26) + 30;
 	printf("Pattern 2: %08X\n", session_base_addr + pktcall2);
 
