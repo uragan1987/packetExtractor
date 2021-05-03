@@ -4,6 +4,8 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
+#include <chrono>
+#include <iomanip>
 
 # if defined(_MSC_VER)
 # ifndef _CRT_SECURE_NO_DEPRECATE
@@ -41,7 +43,8 @@ int main(void) {
 	WORD shuffle_pkt[MAX_SHUFFLE_PACKET + (MAX_SYNC_EX_PACKET << 1)] = { 0 };
 	size_t session_base_addr, offset, offset2, refOffset, ret, pktcall1, pktcall2, last, next;
 	byte g_PacketLenMap[] = "\x0\x0\x0\x0\x0\xE8\xAB\xAB\xAB\xAB\x68\xAB\xAB\xAB\x00\xE8\xAB\xAB\xAB\xAB\x59\xC3";
-	unsigned int ClientDate;
+	byte g_ClientDate[] = "\x0\x0\x0\x0";
+	char ClientDate[100] = { 0x32,0x30,0x32,0x31 };
 	ofstream file;
 	char str[128];
 
@@ -152,13 +155,17 @@ int main(void) {
 	printf("Pattern 2: %08X\n", session_base_addr + pktcall2);
 
 	printf("Step 5a - Get Client date\n");
-	if ((next = ScanMem(&vec, "mylog(\xAB\xAB\xAB \xAB\xAB \xAB\xAB\xAB\xAB).txt", 0, 0, 22, false)) == 0xFFFFFFFF) {
+	SIZE_T bytesRead;
+	DWORD_PTR m_ClientDate;
+	if (ReadProcessMemory(process, (LPCVOID)0x00400140, &m_ClientDate, 4, &bytesRead)) {
+		const char* format = "%Y-%m-%d %H:%M:%S";
+		time_t epochTime = m_ClientDate;
+		strftime(ClientDate, sizeof(ClientDate), format, localtime(&epochTime));
+		printf("Client date: %s\n", ClientDate);
+	}
+	else {
 		printf("Client date not found.\n");
-		ClientDate = 2021;
-	} else {
-		sprintf(str, "%.4s%02d%02d", &ReadMemory(next + 13), MonthName2Num(&ReadMemory(next + 6)), atoi(&ReadMemory(next + 10)));
-		ClientDate = atoi(str);
-		printf("Client date: %d\n", ClientDate);
+		//ClientDate = { 0x0 };
 	}
 
 	printf("Step 5b - Extract packet length\n");
@@ -216,7 +223,7 @@ int main(void) {
 
 	printf("Step 6 - Key Extraction\n");
 	file.open("keys.txt");
-	sprintf(str, "# Client Date <%d>\n", ClientDate);
+	sprintf(str, "# Client Date <%s>\n", ClientDate);
 	file << str;
 	sprintf(str, "# PacketExtractor by uragan1987\n");
 	file << str;
